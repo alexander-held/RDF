@@ -24,7 +24,7 @@ ROOT.EnableImplicitMT(args.ncores or 128)
 import numpy as np
 # get_ipython().run_line_magic('jsroot', 'on')
 print(f'The num of threads = {ROOT.GetThreadPoolSize()}')
-verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
+# verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
 import os
 print(os.environ['EXTRA_CLING_ARGS'])
 
@@ -90,12 +90,14 @@ class TtbarAnalysis(dict):
 
     def _construct_fileset(self):
         n_files_max_per_sample = self.n_files_max_per_sample
-        with open ('ntuples.json') as f:
+        with open ('ntuples_merged.json') as f:
             file_info = json.load(f)
         fileset = {}
         for process in file_info.keys():
             if process == "data":
                 continue  # skip data
+            if "single_top" in process:
+                continue  # TODO: skip single top for simplicity (multiple input files)
             fileset[process] = {}
             self[process] = {}
             self._nevts_total[process] = {}
@@ -120,8 +122,17 @@ class TtbarAnalysis(dict):
         # analysis algorithm themself implemented here
         # fill function accepts parameters pair (process, variation) to which are assigned files in self.input_data
         
+        # TODO modification for file paths
+        translator = {"ttbar": {"nominal": "TT_TuneCUETP8M1_13TeV-powheg-pythia8", "scaledown": "TT_TuneCUETP8M1_13TeV-powheg-scaledown-pythia8", "scaleup": "TT_TuneCUETP8M1_13TeV-powheg-scaleup-pythia8",
+           "ME_var": "TT_TuneCUETP8M1_13TeV-amcatnlo-pythia8", "PS_var": "TT_TuneEE5C_13TeV-powheg-herwigpp"},
+         "single_top_s_chan": {"nominal": "ST_s-channel_4f_InclusiveDecays_13TeV-amcatnlo-pythia8"},
+         "single_top_t_chan": {"nominal": "ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1"},
+         "single_top_tW": {"nominal": "ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1"},
+         "wjets": {"nominal": "WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8"},
+        }
+        
         # all operations are handled by RDataFrame class, so the first step is the RDataFrame object instantiating
-        input_data = [f"{self.disk}/{process}_{variation}/{i}.root" for i in range(self.nfiles[process][variation])]             
+        input_data = [f"{self.disk}/{translator[process][variation]}/{i+1}.root" for i in range(self.nfiles[process][variation])]
         d = RDataFrame('events', input_data)
         
         # normalization for MC
@@ -293,7 +304,7 @@ class TtbarAnalysis(dict):
                     
 
 
-disk='/data/ssdext4_agc_data/afalko' 
+disk='/data/alheld/AGC/datasets/merged/'
 print(f'processing data located at {disk} disk')
 analysisManager = TtbarAnalysis(disk=disk)
 

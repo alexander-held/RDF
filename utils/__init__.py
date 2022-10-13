@@ -73,13 +73,22 @@ def construct_fileset(disk, n_files_max_per_sample, use_xcache=False, use_local=
     for process in file_info.keys():
         if process == "data":
             continue  # skip data
+        elif "single_top" in process: continue
 
         for variation in file_info[process].keys():
             file_list = file_info[process][variation]["files"]
             if n_files_max_per_sample != -1:
                 file_list = file_list[:n_files_max_per_sample]  # use partial set of samples
-
-            file_paths = [f["path"] for f in file_list] if not use_local else [f"{disk}/{process}_{variation}/{i}.root" for i in range(len(file_list))]
+                
+            translator = {"ttbar": {"nominal": "TT_TuneCUETP8M1_13TeV-powheg-pythia8", "scaledown": "TT_TuneCUETP8M1_13TeV-powheg-scaledown-pythia8", "scaleup": "TT_TuneCUETP8M1_13TeV-powheg-scaleup-pythia8",
+               "ME_var": "TT_TuneCUETP8M1_13TeV-amcatnlo-pythia8", "PS_var": "TT_TuneEE5C_13TeV-powheg-herwigpp"},
+             "single_top_s_chan": {"nominal": "ST_s-channel_4f_InclusiveDecays_13TeV-amcatnlo-pythia8"},
+             "single_top_t_chan": {"nominal": "ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1"},
+             "single_top_tW": {"nominal": "ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1"},
+             "wjets": {"nominal": "WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8"},
+            }
+            
+            file_paths = [f["path"] for f in file_list] if not use_local else [f"{disk}/{translator[process][variation]}/{i+1}.root" for i in range(len(file_list))]
             if use_xcache:
                 file_paths = [f.replace("https://xrootd-local.unl.edu:1094", "root://red-xcache1.unl.edu") for f in file_paths]
             nevts_total = sum([f["nevts"] for f in file_list])

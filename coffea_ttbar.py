@@ -366,7 +366,7 @@ class AGCSchema(BaseSchema):
 # In[7]:
 
 
-fileset = utils.construct_fileset('/data/ssdext4_agc_data/afalko', N_FILES_MAX_PER_SAMPLE, use_xcache=False, use_local=INPUT_DATA_INSTALLATION)
+fileset = utils.construct_fileset('/data/alheld/AGC/datasets/merged/', N_FILES_MAX_PER_SAMPLE, use_xcache=False, use_local=INPUT_DATA_INSTALLATION)
 
 print(f"processes in fileset: {list(fileset.keys())}")
 print(f"\nexample of information in fileset:\n{{\n  'files': [{fileset['ttbar__nominal']['files'][0]}, ...],")
@@ -467,7 +467,7 @@ if PIPELINE == "coffea":
 
     from coffea.nanoevents.schemas.schema import auto_schema
     schema = AGCSchema if PIPELINE == "coffea" else auto_schema
-    run = processor.Runner(executor=executor, schema=schema, savemetrics=True, metadata_cache={})
+    run = processor.Runner(executor=executor, schema=schema, savemetrics=True, metadata_cache={}, chunksize=500_000)
 
     all_histograms, metrics = run(fileset, "events", processor_instance=TtbarAnalysis())
     all_histograms = all_histograms["hist"]
@@ -488,6 +488,7 @@ elif PIPELINE == "servicex_databinder":
     
 print(f"\nexecution took {time.time() - t0:.2f} seconds")
 
+print(metrics)
 
 # # ### Inspecting the produced histograms
 # # 
